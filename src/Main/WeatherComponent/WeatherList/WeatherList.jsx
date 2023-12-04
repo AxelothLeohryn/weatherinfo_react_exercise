@@ -27,9 +27,9 @@ const WeatherList = ({ weather }) => {
     return weeklyData;
   }
   const organizedData = organizeDataByDay(weatherData);
-  console.log(organizedData);
+  // console.log(organizedData);
   let organizedDataArray = Object.entries(organizedData);
-  console.log(organizedDataArray);
+  // console.log(organizedDataArray);
 
   const printWeatherCards = () => {
     return organizedDataArray.map((dailyData) => (

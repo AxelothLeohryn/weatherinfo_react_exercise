@@ -4,60 +4,72 @@ import WeatherForm from "./WeatherForm";
 import WeatherList from "./WeatherList";
 
 const WeatherComponent = () => {
-  const [city, setCity] = useState("");
-  const [coords, setCoords] = useState({});
+  const [city, setCity] = useState("madrid");
+  // lat: 40.416775,
+  //   lon: -3.703790
+  //Le pongo unas coords por defecto porque si no está fallando
+  const [coords, setCoords] = useState({
+    lat: 0,
+    lon: 0,
+  });
   const [weather, setWeather] = useState();
 
-  const getLocation = () => {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const currentCoords = {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          };
-          console.log(currentCoords);
-          resolve(currentCoords);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          reject(error);
-        }
-      );
-    });
-  };
-
   useEffect(() => {
-    console.log("I'm gonna fetch coords");
-    const fetchCoords = async () => {
-      try {
-        const locationCoords = await getLocation();
-        setCoords(locationCoords);
-      } catch (error) {
-        console.log("Error fetching coords");
-        setCoords({});
+    // Obtener geolocalización actual del usuario, al cargar la página
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.error("Error getting geolocation:", error);
       }
-    };
-    fetchCoords();
+    );
   }, []);
 
   useEffect(() => {
-    const fetchWeather = async () => {
+    async function fetchCoords() {
       try {
-        if (coords && coords.lat && coords.lon) {
-          const fetchedWeather = await axios.get(
+        await axios
+          .get(
+            `https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&units=metric&appid=${
+              import.meta.env.VITE_APIKEY
+            }`
+          )
+          .then((res) => {
+            setCoords({
+              lat: res.data[0].lat,
+              lon: res.data[0].lon,
+            });
+            // console.log("Coords: " + res.data[0]);
+          });
+        // console.log(coords.lat, coords.lon);
+      } catch (error) {
+        console.log("Error fetching coords");
+        setCoords();
+      }
+    }
+    fetchCoords();
+  }, [city]);
+
+  useEffect(() => {
+    async function fetchWeather() {
+      try {
+        await axios
+          .get(
             `https://api.openweathermap.org/data/2.5/forecast?lat=${
               coords.lat
             }&lon=${coords.lon}&appid=${import.meta.env.VITE_APIKEY}`
-          );
-          setWeather(fetchedWeather.data);
-        }
+          )
+          .then((res) => setWeather(res.data));
+        // console.log(weather);
       } catch (error) {
-        console.log("Error fetching weather", error);
+        console.log("Error fetching weather");
         setWeather([]);
       }
-    };
-
+    }
     fetchWeather();
   }, [coords]);
 
